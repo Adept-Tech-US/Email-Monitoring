@@ -89,14 +89,24 @@ public class EmailAgent {
 
     // ── Extract plain text from email body (no PDF case) ──────────────────
     public String extractBodyText(Message message) throws Exception {
+        return extractBodyText(message, markProcessedRead);
+    }
+
+    public String extractBodyText(Message message, boolean markRead) throws Exception {
         StringBuilder sb = new StringBuilder(); // Get the email body text when there are no PDF attachments.
         collectBodyText(message, sb); // recursively extracts content.
 
-        if (markProcessedRead) {
+        if (markRead && markProcessedRead) {
             message.setFlag(Flags.Flag.SEEN, true);
         }
 
         return sb.toString().trim();
+    }
+
+    public void markAsRead(Message message) throws Exception {
+        if (markProcessedRead) {
+            message.setFlag(Flags.Flag.SEEN, true);
+        }
     }
 
     // ── Recursive: collect PDF files from all MIME parts ──────────────────
