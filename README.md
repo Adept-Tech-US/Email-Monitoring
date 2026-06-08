@@ -6,6 +6,9 @@ This project automates the process of reading emails from Gmail or Outlook inbox
 The solution is implemented using **Java** and follows an **AI Agent-based architecture** to separate responsibilities and improve maintainability.
 
 ---
+## Overview
+https://docs.google.com/document/d/1me3yiLcfNvh_l8vw6bZ2jAJkzmqniPhfDuvji0-7y3s/edit?usp=sharing
+
 
 ## Exiting Objectives
 
