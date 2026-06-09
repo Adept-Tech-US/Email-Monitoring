@@ -1,6 +1,7 @@
 package com.company.aiagents.agent;
 
 import com.company.aiagents.model.ExtractedData;
+import com.company.aiagents.service.AddeparService;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.FillPatternType;
@@ -25,6 +26,12 @@ public class ExcelAgent {
 
     @Value("${report.output-path:D:\\Adept-Tech\\email-monitoring\\ai-agent\\output\\report.xlsx}")
     private String reportOutputPath;
+
+    private final AddeparService addeparService;
+
+    public ExcelAgent(AddeparService addeparService) {
+        this.addeparService = addeparService;
+    }
 
     public void append(File pdf, ExtractedData data) throws Exception {
         writeRow(pdf, data);
@@ -80,6 +87,7 @@ public class ExcelAgent {
         Files.move(tempFile.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
         System.out.println("ExcelAgent: row added -> " + file.getAbsolutePath());
+        addeparService.importExcel(file);
     }
 
     private Workbook openOrCreateWorkbook(File file) throws IOException {

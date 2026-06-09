@@ -5,6 +5,9 @@ public class PortalCredential {
     private String username;
     private String password;
     private String otpType;
+    private String otpCode;
+    private String otpSelector;
+    private String otpVerifySelector;
 
     public String getPortalName() {
         return portalName;
@@ -36,5 +39,29 @@ public class PortalCredential {
 
     public void setOtpType(String otpType) {
         this.otpType = otpType;
-    }   
+    }
+
+    public String getOtpCode() {
+        return otpCode;
+    }
+
+    public void setOtpCode(String otpCode) {
+        this.otpCode = otpCode;
+    }
+
+    public String getOtpSelector() {
+        return otpSelector;
+    }
+
+    public void setOtpSelector(String otpSelector) {
+        this.otpSelector = otpSelector;
+    }
+
+    public String getOtpVerifySelector() {
+        return otpVerifySelector;
+    }
+
+    public void setOtpVerifySelector(String otpVerifySelector) {
+        this.otpVerifySelector = otpVerifySelector;
+    }
 }

@@ -71,7 +71,11 @@ public class PortalAgent {
         Page page = browser.newPage();
         page.navigate(portalUrl);
         boolean ok = authAgent.login(page, credential);
-        if (!ok) throw new RuntimeException("PortalAgent: login failed for " + portalUrl);
+        if (!ok) {
+            browser.close();
+            playwright.close();
+            throw new RuntimeException("PortalAgent: login failed for " + portalUrl);
+        }
         return new PlaywrightSession(playwright, browser, page);
     }
 

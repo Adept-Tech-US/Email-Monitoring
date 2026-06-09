@@ -52,19 +52,22 @@ public class DocumentProcessingService {
     private final ExtractionAgent extractionAgent;
     private final ExcelAgent excelAgent;
     private final S3StorageService s3;
+    private final LocalStorageService localStorage;
     private final ProcessedDocumentRepository repo;
     private final PortalWorkflowService portalPipeline;
 
     public DocumentProcessingService(
             EmailAgent emailAgent, PdfAgent pdfAgent,
             ExtractionAgent extractionAgent, ExcelAgent excelAgent,
-            S3StorageService s3, ProcessedDocumentRepository repo,
+            S3StorageService s3, LocalStorageService localStorage,
+            ProcessedDocumentRepository repo,
             PortalWorkflowService portalPipeline) {
         this.emailAgent = emailAgent;
         this.pdfAgent = pdfAgent;
         this.extractionAgent = extractionAgent;
         this.excelAgent = excelAgent;
         this.s3 = s3;
+        this.localStorage = localStorage;
         this.repo = repo;
         this.portalPipeline = portalPipeline;
     }
@@ -89,9 +92,11 @@ public class DocumentProcessingService {
                         System.out.println("Skipping already-processed: " + pdf.getName());
                         continue;
                     }
-                    s3.upload(pdf, "raw-pdfs");
                     String text = pdfAgent.extractText(pdf);
                     ExtractedData data = extractionAgent.extract(text);
+                    localStorage.save(pdf, data);
+                    String s3Folder = "raw-pdfs/" + localStorage.buildRelativePath(data);
+                    s3.upload(pdf, s3Folder);
                     excelAgent.append(pdf, data);
                     repo.markProcessed(pdf.getName());
                 }

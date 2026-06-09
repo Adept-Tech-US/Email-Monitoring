@@ -58,18 +58,29 @@ public class PortalWorkflowService {
     @Value("${portal.name:portal-email-link}")
     private String portalName;
 
+    @Value("${portal.otp.code:}")
+    private String portalOtpCode;
+
+    @Value("${portal.otp.selector:#otp}")
+    private String portalOtpSelector;
+
+    @Value("${portal.otp.verify-selector:#verify}")
+    private String portalOtpVerifySelector;
+
     private final PortalAgent portalAgent;
     private final DownloadAgent downloadAgent;
     private final PdfAgent pdfAgent;
     private final ExtractionAgent extractionAgent;
     private final ExcelAgent excelAgent;
     private final S3StorageService s3;
+    private final LocalStorageService localStorage;
     private final ProcessedDocumentRepository repo;
 
     public PortalWorkflowService(
             PortalAgent portalAgent, DownloadAgent downloadAgent,
             PdfAgent pdfAgent, ExtractionAgent extractionAgent,
             ExcelAgent excelAgent, S3StorageService s3,
+            LocalStorageService localStorage,
             ProcessedDocumentRepository repo) {
         this.portalAgent = portalAgent;
         this.downloadAgent = downloadAgent;
@@ -77,6 +88,7 @@ public class PortalWorkflowService {
         this.extractionAgent = extractionAgent;
         this.excelAgent = excelAgent;
         this.s3 = s3;
+        this.localStorage = localStorage;
         this.repo = repo;
     }
 
@@ -88,6 +100,7 @@ public class PortalWorkflowService {
         runInternal(portalUrl, credential);
     }
 
+    // credential are configured in application.properties and injected by Spring, but this method allows overriding them at runtime (e.g. from email body)
     public void runWithUrl(String portalUrlOverride) throws Exception {
         if (portalUrlOverride == null || portalUrlOverride.isBlank()) {
             System.out.println("PortalWorkflowService: no portal URL provided, skipping.");
@@ -101,6 +114,7 @@ public class PortalWorkflowService {
         runInternal(portalUrlOverride, credential);
     }
 
+    //check if both username and password are set in config
     private boolean hasPortalCredentials() {
         return portalUsername != null && !portalUsername.isBlank()
                 && portalPassword != null && !portalPassword.isBlank();
@@ -111,18 +125,24 @@ public class PortalWorkflowService {
         credential.setPortalName(portalName);
         credential.setUsername(portalUsername);
         credential.setPassword(portalPassword);
+        credential.setOtpCode(portalOtpCode);
+        credential.setOtpSelector(portalOtpSelector);
+        credential.setOtpVerifySelector(portalOtpVerifySelector);
         return credential;
     }
 
+    // Opens a Playwright session, downloads PDFs, extracts data, uploads to S3, and appends to Excel
     private void runInternal(String url, PortalCredential credential) throws Exception {
         try (PortalAgent.PlaywrightSession session = portalAgent.connect(url, credential)) {
             List<File> pdfs = downloadAgent.downloadFiles(session.page());
 
             for (File pdf : pdfs) {
                 if (repo.alreadyProcessed(pdf.getName())) continue;
-                s3.upload(pdf, "portal-pdfs/" + credential.getPortalName());
                 String text = pdfAgent.extractText(pdf);
                 ExtractedData data = extractionAgent.extract(text);
+                localStorage.save(pdf, data);
+                String s3Folder = "portal-pdfs/" + credential.getPortalName() + "/" + localStorage.buildRelativePath(data);
+                s3.upload(pdf, s3Folder);
                 excelAgent.append(pdf, data);
                 repo.markProcessed(pdf.getName());
             }
